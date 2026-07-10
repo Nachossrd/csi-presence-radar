@@ -1,6 +1,8 @@
 # 📡 CSI Presence Radar
 
-> Radar de presencia y localización *indoor* sin cámaras invasivas: combina **Wi-Fi CSI** (Channel State Information) de un ESP32, escaneo **BLE/Wi-Fi multi-AP**, visión por computador opcional y un **gemelo digital 3D** del espacio para detectar y ubicar personas en tiempo real.
+> Prototipo de radar de presencia y localización *indoor* que busca depender **menos** de cámaras: combina **Wi-Fi CSI** (Channel State Information) de un ESP32, escaneo **BLE/Wi-Fi multi-AP**, visión por computador opcional y un **gemelo digital 3D** del espacio para detectar y ubicar personas. Proyecto de investigación / prueba de concepto.
+
+**Por qué este proyecto:** para investigar alternativas de detección de presencia **menos invasivas que las cámaras** — usando las señales de radio que ya atraviesan un espacio (Wi-Fi, BLE) en lugar de grabar imagen de forma continua.
 
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white">
@@ -57,6 +59,27 @@ Los modelos YOLO (`yolov8n.pt` / `yolov8s.pt`) no se incluyen; descárgalos de U
 ## 🔒 Privacidad — importante
 
 Este proyecto trabaja con datos potencialmente **biométricos y personales** (rostros, embeddings, MACs de dispositivos, plano de una vivienda). Por diseño, **la carpeta `data/`, los embeddings y los modelos están excluidos del repositorio** (`.gitignore`). Ejecuta el sistema **solo en espacios propios y con consentimiento** de las personas involucradas. Las credenciales Wi-Fi del firmware son placeholders — coloca las tuyas localmente.
+
+## 📊 Benchmarks
+
+> ⚠️ **Pendiente de medición.** El rendimiento depende fuertemente del entorno RF (nº de APs, materiales, interferencia), así que estas métricas solo tienen sentido con su metodología y entorno declarados. Objetivo:
+
+| Métrica | Cómo se mide | Valor |
+|---------|--------------|-------|
+| FPS de detección | frames CSI procesados / seg en el backend | *por medir* |
+| Latencia evento → dashboard | timestamp del evento vs. recepción en el frontend (WebSocket) | *por medir* |
+| Precisión de zona | detecciones correctas de zona / total, en un layout etiquetado | *por medir* |
+| Error de localización | distancia media (m) entre posición estimada y real | *por medir* |
+
+*Entorno de referencia: por definir (nº de APs, tamaño del espacio, hardware).*
+
+## ⚠️ Limitaciones
+
+- **Prueba de concepto**, no un sistema de seguridad ni de vigilancia certificado.
+- La precisión depende de la **calibración** y del **entorno RF**; muros gruesos, metal e interferencia degradan la señal.
+- Requiere **hardware específico** (ESP32 con soporte CSI y varios APs) y suele necesitar re-calibración si cambia el layout.
+- La localización por trilateración BLE/Wi-Fi es **aproximada** (orden de metros), no centimétrica.
+- Trabaja con datos potencialmente **biométricos/personales**: úsalo solo en espacios propios y con consentimiento (ver sección de privacidad).
 
 ## 🛠️ Stack
 
