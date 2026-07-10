@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Wi-Fi Radar · Digital Twin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Indoor 3D localization using Wi-Fi fingerprinting">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header id="app-header">
+    <div class="logo">
+      <span class="logo-icon">📡</span>
+      <h1>Wi-Fi Radar <span class="accent">· Digital Twin</span></h1>
+    </div>
+    <div class="header-status">
+      <div class="connection-indicator" id="ws-status">
+        <span class="status-dot"></span>
+        <span class="status-text">Desconectado</span>
+      </div>
+      <div class="mode-badge" id="mode-badge">EDITOR</div>
+    </div>
+  </header>
+
+  <!-- ===== Main Content ===== -->
+  <main id="app-main">
+
+    <!-- Left: 3D + 2D Views stacked -->
+    <section class="views-panel">
+      <div class="view-container" id="view-3d-container">
+        <div class="view-header">
+          <h2>Vista 3D</h2>
+          <div class="view-controls">
+            <button id="btn-camera-top" title="Vista cenital">⬆</button>
+            <button id="btn-camera-iso" title="Vista isométrica" class="active">◇</button>
+            <button id="btn-camera-follow" title="Seguir persona">👤</button>
+          </div>
+        </div>
+        <canvas id="three-canvas"></canvas>
+      </div>
+      <div class="view-container" id="view-2d-container">
+        <div class="view-header">
+          <h2>Plano 2D</h2>
+          <div class="view-controls">
+            <button id="btn-toggle-grid" title="Cuadrícula" class="active">⊞</button>
+            <button id="btn-toggle-labels" title="Etiquetas" class="active">Aa</button>
+            <button id="btn-toggle-fingerprints" title="Fingerprints">📍</button>
+          </div>
+        </div>
+        <canvas id="floor-plan-canvas"></canvas>
+      </div>
+    </section>
+
+    <!-- Right: Control Panel -->
+    <aside class="control-panel" id="control-panel">
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab active" data-tab="monitor">📊 Monitor</button>
+        <button class="tab" data-tab="fingerprint">📍 Fingerprints</button>
+        <button class="tab" data-tab="editor">🏠 Editor</button>
+        <button class="tab" data-tab="settings">⚙ Config</button>
+      </div>
+
+      <!-- ===== Monitor Tab ===== -->
+      <div class="tab-content active" id="tab-monitor">
+
+        <!-- Position Card -->
+        <div class="card" id="position-card">
+          <h3>📌 Posición Actual</h3>
+          <div class="position-display">
+            <div class="coord">
+              <span class="label">X</span>
+              <span class="value" id="pos-x">--</span>
+              <span class="unit">m</span>
+            </div>
+            <div class="coord">
+              <span class="label">Y</span>
+              <span class="value" id="pos-y">--</span>
+              <span class="unit">m</span>
+            </div>
+          </div>
+          <div class="zone-display">
+            <span class="label">Zona:</span>
+            <span class="zone-badge" id="current-zone">--</span>
+          </div>
+          <div class="confidence-bar">
+            <span class="label">Confianza</span>
+            <div class="bar-track"><div class="bar-fill" id="confidence-fill"></div></div>
+            <span class="value" id="confidence-value">0%</span>
+          </div>
+        </div>
+
+        <!-- Wi-Fi Card -->
+        <div class="card" id="wifi-card">
+          <h3>📶 Redes Wi-Fi</h3>
+          <button class="btn btn-primary" id="btn-scan-wifi">Escanear</button>
+          <div class="ap-list" id="ap-list">
+            <p class="placeholder">Sin datos</p>
+          </div>
+        </div>
+
+        <!-- Tracking Card -->
+        <div class="card" id="tracking-card">
+          <h3>🎯 Localización</h3>
+          <div class="stats-grid">
+            <div class="stat">
+              <span class="stat-value" id="stat-fingerprints">0</span>
+              <span class="stat-label">Fingerprints</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="stat-aps">0</span>
+              <span class="stat-label">APs</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="stat-accuracy">--</span>
+              <span class="stat-label">Precisión</span>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-secondary" id="btn-train">Entrenar Modelo</button>
+            <button class="btn btn-success" id="btn-start-tracking">▶ Iniciar Tracking</button>
+            <button class="btn btn-danger hidden" id="btn-stop-tracking">⏹ Detener</button>
+          </div>
+          <div class="toggle-row">
+            <label>Modo Simulación</label>
+            <button class="toggle-btn" id="btn-simulation">OFF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Fingerprint Tab ===== -->
+      <div class="tab-content" id="tab-fingerprint">
+        <div class="card">
+          <h3>📍 Recolectar Fingerprints</h3>
+          <p class="help-text">Haz clic en el plano 2D para marcar tu posición actual. Se registrará la señal Wi-Fi en ese punto.</p>
+          <button class="btn btn-primary" id="btn-collect-mode">Activar Modo Recolección</button>
+          <div class="fingerprint-list" id="fingerprint-list">
+            <p class="placeholder">Sin fingerprints</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Editor Tab ===== -->
+      <div class="tab-content" id="tab-editor">
+        <div class="card">
+          <h3>🏠 Editor de Plano</h3>
+          <p class="help-text">Dibuja las paredes y habitaciones de tu casa.</p>
+          <div class="editor-tools">
+            <button class="tool-btn active" data-tool="wall" title="Dibujar pared">🧱</button>
+            <button class="tool-btn" data-tool="room" title="Definir habitación">🏠</button>
+            <button class="tool-btn" data-tool="router" title="Colocar router">📡</button>
+            <button class="tool-btn" data-tool="door" title="Colocar puerta">🚪</button>
+            <button class="tool-btn" data-tool="erase" title="Borrar">🗑️</button>
+          </div>
+          <div class="editor-options">
+            <label>Ancho (m):
+              <input type="number" id="house-width" value="10" min="3" max="30" step="0.5">
+            </label>
+            <label>Largo (m):
+              <input type="number" id="house-length" value="11" min="3" max="30" step="0.5">
+            </label>
+            <label>Snap a cuadrícula:
+              <input type="checkbox" id="snap-grid" checked>
+            </label>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" id="btn-save-plan">💾 Guardar</button>
+            <button class="btn btn-secondary" id="btn-load-plan">📂 Cargar</button>
+            <button class="btn btn-danger" id="btn-clear-plan">🗑 Limpiar</button>
+            <button class="btn btn-secondary" id="btn-load-default">📋 Plano Demo</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Settings Tab ===== -->
+      <div class="tab-content" id="tab-settings">
+        <div class="card">
+          <h3>⚙ Configuración</h3>
+          <div class="editor-options">
+            <label>Intervalo escaneo (ms):
+              <input type="number" id="scan-interval" value="2000" min="500" max="10000" step="500">
+            </label>
+            <label>Trail length:
+              <input type="number" id="trail-length" value="50" min="10" max="200" step="10">
+            </label>
+            <label>Kalman noise:
+              <input type="range" id="kalman-noise" min="0.01" max="2" step="0.01" value="0.1">
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- App entry point -->
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

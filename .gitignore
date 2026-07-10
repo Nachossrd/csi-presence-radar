@@ -1,0 +1,47 @@
+# ─── DATOS PERSONALES / BIOMÉTRICOS — NUNCA PUBLICAR ──────────────────────
+# Rostros, embeddings faciales, MACs de dispositivos, mapas de la vivienda.
+data/
+*.npz
+*.npy
+
+# ─── Modelos / pesos (grandes, no van al repo) ────────────────────────────
+*.pt
+*.pth
+*.onnx
+*.engine
+yolov8*.pt
+
+# ─── Secretos / config local ─────────────────────────────────────────────
+.env
+.env.*
+*.local.json
+
+# ─── Python ───────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+
+# ─── Node (frontend, si aplica) ───────────────────────────────────────────
+node_modules/
+npm-debug.log*
+
+# ─── Logs ─────────────────────────────────────────────────────────────────
+*.log
+uvicorn.err.log
+uvicorn.out.log
+
+# ─── Arduino / build ──────────────────────────────────────────────────────
+build/
+*.bin
+*.elf
+*.hex
+
+# ─── IDE / SO ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+desktop.ini
+.DS_Store
